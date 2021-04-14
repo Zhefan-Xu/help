@@ -1,8 +1,16 @@
+#Last revised by yipingd 20210409
+
 #! /usr/bin/env python
 import rospy
 import message_filters 
 from DEP.msg import Goal
 from sensor_msgs.msg import Image
+
+from cv_bridge import CvBridge, CvBridgeError
+import cv2
+import os
+import shutil
+import numpy as np
 
 class CollectData():
 	def __init__(self):	
@@ -39,7 +47,7 @@ class CollectData():
 
 		if (self.waypoint_received == False):
 			rospy.loginfo("wait for waypoint...")
-
+			
 
 		all_received = False
 		while all_received == False and not rospy.is_shutdown():
@@ -47,9 +55,14 @@ class CollectData():
 
 		rospy.loginfo("Message Ready!")
 
+		index = 0
+
+		last_way_point = self.waypoint_msg
+
+
 
 		while not rospy.is_shutdown():
-			pass
+			#pass
 			''' TODO
 			Check if we obatin a new waypoint
 			if we obtain a new waypoint: 
@@ -57,6 +70,61 @@ class CollectData():
 				2. save current depth image
 				3. save current waypoint (x, y, z)
 			'''
+
+			###### INitialization ######
+			if index == 0:
+				color_image_folder = 'color_image/'
+				if not os.path.exists(color_image_folder):
+					os.mkdir(color_image_folder)
+				shutil.rmtree(color_image_folder)
+				os.mkdir(color_image_folder)
+
+				depth_image_folder = 'depth_image/'
+				if not os.path.exists(depth_image_folder):
+					os.mkdir(depth_image_folder)
+				shutil.rmtree(depth_image_folder)
+				os.mkdir(depth_image_folder)
+
+				waypoint_folder = 'waypoint/'
+				if not os.path.exists(waypoint_folder):
+					os.mkdir(waypoint_folder)
+				shutil.rmtree(waypoint_folder)
+				os.mkdir(waypoint_folder)
+
+				waypoint_file_name = 'waypoint_file.txt'
+				with open(waypoint_folder + waypoint_file_name, 'a+') as f:
+					f.truncate()
+					#my_waypoint_msg = str(index) + ',' + str(self.waypoint_msg.x) + ',' + str(self.waypoint_msg.y) + ',' + str(self.waypoint_msg.z)
+					#f.write(my_waypoint_msg)
+					#f.write('\n')
+
+
+			if last_way_point.x != self.waypoint_msg.x or last_way_point.y != self.waypoint_msg.y or last_way_point.z != self.waypoint_msg.z:
+
+				color_image_name = 'color_image' + str(index) + '.png'
+				depth_image_name = 'depth_image' + str(index) + '.png'
+
+				bridge = CvBridge()
+
+				cv_image_color = bridge.imgmsg_to_cv2(self.current_color_img_msg, desired_encoding = "passthrough")
+
+				
+				cv_image_depth = bridge.imgmsg_to_cv2(self.current_depth_img_msg, desired_encoding = "passthrough")
+				img_array = np.array(cv_image_depth, dtype = np.float32)
+				cv2.normalize(img_array, img_array, 0, 1, cv2.NORM_MINMAX)
+
+				cv2.imwrite(color_image_folder + color_image_name, cv_image_color)
+				cv2.imwrite(depth_image_folder + depth_image_name, img_array*255)
+
+				my_waypoint_msg = str(index) + ',' + str(self.waypoint_msg.x) + ',' + str(self.waypoint_msg.y) + ',' + str(self.waypoint_msg.z)
+				f = open(waypoint_folder + waypoint_file_name, 'a')
+				f.write(my_waypoint_msg)
+				f.write('\n')
+
+				last_way_point = self.waypoint_msg
+
+				index += 1
+
 
 def main():
 	rospy.init_node('collect_data', anonymous=False)

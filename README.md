@@ -2,7 +2,7 @@
 history-aware exploration learning planner (HELP)
 
 
-# Data Collection (TODO)
+# Data Collection
 Run exploration in the following environments:
 - Cafe
 - Maze
@@ -35,3 +35,6 @@ Dataset
 │   ...
 └── 
 ```
+
+# Model (TODO)
+<img width="1090" alt="Screen Shot 2021-06-09 at 11 46 43 PM" src="https://user-images.githubusercontent.com/55560905/121387737-7f5f9e80-c97d-11eb-8682-dddb120cf2b5.png">
